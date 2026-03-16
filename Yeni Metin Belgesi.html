@@ -1,0 +1,1395 @@
+<!doctype html>
+<html lang="tr" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Akıllı Post-it Sistemi</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <style>
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        .post-it {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            break-inside: avoid;
+        }
+        .post-it:hover {
+            transform: scale(1.02) rotate(1deg);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+        }
+
+        .lesson-tag {
+            background: rgba(0, 0, 0, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+    </style>
+  <style>body { box-sizing: border-box; }</style>
+ </head>
+ <body class="h-full flex flex-col">
+  <div id="app-root" class="w-full h-full flex flex-col relative overflow-hidden">
+   <!-- Auth View -->
+   <div id="auth-view" class="flex-1 flex flex-col items-center justify-center p-6 space-y-8 bg-slate-900 overflow-auto">
+    <div class="text-center space-y-2">
+     <h1 id="main-title" class="text-5xl font-bold text-white tracking-tight">Akıllı Post-it</h1>
+     <p id="welcome-text" class="text-slate-400">Notlarını düzenle, derslerini planla.</p>
+    </div>
+    <div id="auth-initial" class="flex flex-col sm:flex-row gap-4">
+     <button onclick="showAuthForm('login')" class="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all flex items-center gap-2"> <i data-lucide="log-in" class="w-5 h-5"></i> Giriş Yap </button> <button onclick="showAuthForm('register')" class="px-8 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-bold transition-all flex items-center gap-2"> <i data-lucide="user-plus" class="w-5 h-5"></i> Hesap Oluştur </button>
+    </div><!-- Forms Container -->
+    <div id="form-container" class="hidden w-full max-w-md bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-700">
+     <div id="login-form" class="hidden space-y-6">
+      <h2 class="text-2xl font-bold">Giriş Yap</h2>
+      <div class="space-y-4">
+       <div>
+        <label class="block text-sm font-medium mb-1">Kullanıcı Adı</label> <input type="text" id="login-username" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+       </div>
+       <div>
+        <label class="block text-sm font-medium mb-1">Şifre</label> <input type="password" id="login-password" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+       </div>
+      </div><button onclick="handleLogin()" class="w-full py-3 bg-indigo-600 rounded-lg font-bold hover:bg-indigo-700 transition-colors">Sisteme Gir</button> <button onclick="resetAuthView()" class="w-full text-slate-400 text-sm hover:underline">Geri Dön</button>
+     </div>
+     <div id="register-form" class="hidden space-y-6">
+      <h2 class="text-2xl font-bold">Hesap Oluştur</h2>
+      <div class="space-y-4">
+       <div>
+        <label class="block text-sm font-medium mb-1 text-slate-300">İsim (3-15 Karakter)</label> <input type="text" id="reg-username" maxlength="15" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+       </div>
+       <div>
+        <label class="block text-sm font-medium mb-1 text-slate-300">Şifre (4-20 Karakter)</label> <input type="password" id="reg-password" maxlength="20" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+       </div>
+       <div>
+        <label class="block text-sm font-medium mb-1 text-slate-300">Şifre Tekrar</label> <input type="password" id="reg-password-confirm" maxlength="20" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+       </div>
+      </div><button onclick="handleRegister()" class="w-full py-3 bg-emerald-600 rounded-lg font-bold hover:bg-emerald-700 transition-colors">Kayıt Ol</button> <button onclick="resetAuthView()" class="w-full text-slate-400 text-sm hover:underline">Geri Dön</button>
+     </div>
+    </div>
+   </div><!-- Admin Panel View -->
+   <div id="admin-view" class="hidden flex-1 flex flex-col h-full bg-slate-950 overflow-hidden">
+    <!-- Header -->
+    <header class="h-16 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-900 shrink-0">
+     <div class="flex items-center gap-2">
+      <div class="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center">
+       <i data-lucide="shield-alert" class="text-white w-6 h-6"></i>
+      </div><span class="font-bold text-lg">Admin Paneli</span>
+     </div><button onclick="handleLogout()" class="bg-red-600/20 text-red-400 hover:bg-red-600/30 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors"> <i data-lucide="log-out" class="w-4 h-4"></i> <span class="hidden md:inline">Çıkış</span> </button>
+    </header><!-- Admin Content -->
+    <main id="admin-container" class="flex-1 overflow-auto p-6 custom-scrollbar">
+     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Users Section -->
+      <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700">
+       <h2 class="text-2xl font-bold mb-6 flex items-center gap-2"><i data-lucide="users" class="w-6 h-6"></i> Tüm Hesaplar</h2>
+       <div id="admin-users-list" class="space-y-3 max-h-96 overflow-y-auto custom-scrollbar">
+        <!-- Users will be rendered here -->
+       </div>
+      </div><!-- Notes Section -->
+      <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700">
+       <div id="admin-notes-header" class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold flex items-center gap-2"><i data-lucide="note" class="w-6 h-6"></i> <span id="admin-notes-title">Notlar</span></h2><button id="admin-notes-back-btn" onclick="clearSelectedUser()" class="hidden bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded text-sm font-medium transition-colors flex items-center gap-2"> <i data-lucide="arrow-left" class="w-4 h-4"></i> Geri </button>
+       </div>
+       <div id="admin-notes-empty" class="text-slate-400 text-sm text-center py-8">
+        Notları görmek için bir hesap seçiniz.
+       </div>
+       <div id="admin-notes-list" class="hidden space-y-3 max-h-96 overflow-y-auto custom-scrollbar">
+        <!-- Notes will be rendered here -->
+       </div>
+      </div>
+     </div>
+    </main>
+   </div><!-- User Edit Modal (Admin) -->
+   <div id="admin-user-modal" class="modal-backdrop fixed inset-0 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90%]">
+     <div class="p-6 border-b border-slate-700 flex justify-between items-center">
+      <h3 class="text-xl font-bold">Hesabı Düzenle</h3><button onclick="toggleModal('admin-user-modal', false)" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button>
+     </div>
+     <div class="p-6 overflow-auto custom-scrollbar space-y-6">
+      <div>
+       <label class="block text-sm font-medium mb-2">Kullanıcı Adı</label> <input type="text" id="admin-edit-username" readonly class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 outline-none opacity-60">
+      </div>
+      <div>
+       <label class="block text-sm font-medium mb-2">Yeni Şifre (Boş bırakırsa değiştirilmez)</label> <input type="text" id="admin-edit-newpass" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Yeni şifre yazın...">
+      </div>
+      <div class="p-4 bg-red-900/20 border border-red-700 rounded-lg">
+       <p class="text-sm text-red-300 mb-3">Tehlikeli Bölge</p><button onclick="deleteUserFromAdmin()" class="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2"> <i data-lucide="trash-2" class="w-4 h-4"></i> Hesabı Sil </button>
+      </div>
+     </div>
+     <div class="p-6 border-t border-slate-700 bg-slate-800/50 flex gap-3">
+      <button id="admin-save-user-btn" onclick="saveUserChanges()" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors">Değişiklikleri Kaydet</button> <button onclick="toggleModal('admin-user-modal', false)" class="px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold transition-colors">İptal</button>
+     </div>
+    </div>
+   </div><!-- Note Edit Modal (Admin) -->
+   <div id="admin-note-modal" class="modal-backdrop fixed inset-0 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90%]">
+     <div class="p-6 border-b border-slate-700 flex justify-between items-center">
+      <h3 class="text-xl font-bold">Notu Düzenle (Admin)</h3><button onclick="toggleModal('admin-note-modal', false)" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button>
+     </div>
+     <div class="p-6 overflow-auto custom-scrollbar space-y-6">
+      <div>
+       <label class="block text-sm font-medium mb-2">Kullanıcı</label> <input type="text" id="admin-note-user" readonly class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 outline-none opacity-60">
+      </div>
+      <div>
+       <label class="block text-sm font-medium mb-2">Ders</label> <input type="text" id="admin-note-lesson" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
+      </div>
+      <div>
+       <label class="block text-sm font-medium mb-2">İçerik</label> <textarea id="admin-note-content" rows="5" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+      </div>
+      <div class="p-4 bg-red-900/20 border border-red-700 rounded-lg">
+       <p class="text-sm text-red-300 mb-3">Tehlikeli Bölge</p><button onclick="deleteNoteFromAdmin()" class="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2"> <i data-lucide="trash-2" class="w-4 h-4"></i> Notu Sil </button>
+      </div>
+     </div>
+     <div class="p-6 border-t border-slate-700 bg-slate-800/50 flex gap-3">
+      <button id="admin-save-note-btn" onclick="saveNoteChanges()" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors">Değişiklikleri Kaydet</button> <button onclick="toggleModal('admin-note-modal', false)" class="px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold transition-colors">İptal</button>
+     </div>
+    </div>
+   </div><!-- Board View -->
+   <div id="board-view" class="hidden flex-1 flex flex-col h-full bg-slate-950 overflow-hidden">
+    <!-- Header -->
+    <header class="h-16 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-900 shrink-0">
+     <div class="flex items-center gap-2">
+      <div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
+       <i data-lucide="sticky-note" class="text-white w-6 h-6"></i>
+      </div><span id="display-name" class="font-bold text-lg hidden sm:block"></span>
+     </div>
+     <div class="flex items-center gap-3 flex-1 max-w-md mx-4">
+      <div class="relative w-full">
+       <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"></i> <input type="text" id="search-input" placeholder="Notlarında ara..." class="w-full bg-slate-800 border border-slate-700 rounded-lg px-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" oninput="handleSearch(this.value)">
+      </div>
+     </div>
+     <div class="flex items-center gap-3">
+      <button onclick="toggleModal('note-modal', true)" class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors"> <i data-lucide="plus" class="w-4 h-4"></i> <span class="hidden md:inline">Not Ekle</span> </button> <button onclick="toggleModal('settings-modal', true)" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors"> <i data-lucide="settings" class="w-4 h-4"></i> <span class="hidden md:inline">Ayarlar</span> </button> <button id="back-to-admin-btn" onclick="backToAdminPanel()" class="hidden bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors"> <i data-lucide="arrow-left" class="w-4 h-4"></i> <span class="hidden md:inline">Admin Paneline Dön</span> </button> <button onclick="handleLogout()" class="bg-red-600/20 text-red-400 hover:bg-red-600/30 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors"> <i data-lucide="log-out" class="w-4 h-4"></i> <span class="hidden md:inline">Çıkış</span> </button>
+     </div>
+    </header><!-- Main Content Area -->
+    <main id="notes-container" class="flex-1 overflow-auto p-6 custom-scrollbar">
+     <!-- Grouped Content will go here -->
+     <div id="notes-grid" class="flex flex-wrap gap-6">
+      <!-- Notes injected here -->
+     </div>
+     <div id="empty-state" class="hidden h-full flex flex-col items-center justify-center opacity-40">
+      <i data-lucide="ghost" class="w-20 h-20 mb-4"></i>
+      <p class="text-xl font-medium">Henüz hiç notun yok...</p>
+      <p>Sağ üstteki butona basarak ilk notunu ekleyebilirsin!</p>
+     </div>
+    </main>
+   </div><!-- Notification Toast -->
+   <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 transform translate-y-20 transition-all duration-300 z-50 px-6 py-3 bg-slate-800 border border-slate-700 rounded-full shadow-2xl flex items-center gap-3 pointer-events-none opacity-0">
+    <div id="toast-icon" class="p-1 rounded-full"></div><span id="toast-message" class="text-sm font-medium"></span>
+   </div><!-- Note Modal -->
+   <div id="note-modal" class="modal-backdrop fixed inset-0 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90%]">
+     <div class="p-6 border-b border-slate-700 flex justify-between items-center">
+      <h3 class="text-xl font-bold">Yeni Post-it Ekle</h3><button onclick="toggleModal('note-modal', false)" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button>
+     </div>
+     <div class="p-6 overflow-auto custom-scrollbar space-y-6">
+      <!-- Lesson Select -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+       <div>
+        <label class="block text-sm font-medium mb-1">Ders Seçin</label> <select id="note-lesson" onchange="toggleOtherLesson(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 outline-none"> <option value="">Seçiniz</option> <option value="Matematik">Matematik</option> <option value="Edebiyat">Edebiyat</option> <option value="Fizik">Fizik</option> <option value="Kimya">Kimya</option> <option value="Biyoloji">Biyoloji</option> <option value="Coğrafya">Coğrafya</option> <option value="İngilizce">İngilizce</option> <option value="Almanca">Almanca</option> <option value="Din Kültürü">Din Kültürü</option> <option value="Diğer">Diğer</option> </select>
+       </div>
+       <div id="other-lesson-container" class="hidden">
+        <label class="block text-sm font-medium mb-1">Ders Adı Yazın</label> <input type="text" id="note-custom-lesson" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 outline-none" placeholder="Ders ismi...">
+       </div>
+      </div><!-- Color Picker Section -->
+      <div class="space-y-4">
+       <label class="block text-sm font-medium">Post-it Rengi</label>
+       <div class="flex flex-wrap gap-2">
+        <button onclick="setQuickColor('#ffffff')" class="w-8 h-8 rounded-full border border-white/20" style="background: #ffffff" title="Beyaz"></button> <button onclick="setQuickColor('#3b82f6')" class="w-8 h-8 rounded-full border border-white/20" style="background: #3b82f6" title="Mavi"></button> <button onclick="setQuickColor('#ef4444')" class="w-8 h-8 rounded-full border border-white/20" style="background: #ef4444" title="Kırmızı"></button> <button onclick="setQuickColor('#22c55e')" class="w-8 h-8 rounded-full border border-white/20" style="background: #22c55e" title="Yeşil"></button> <button onclick="setQuickColor('#eab308')" class="w-8 h-8 rounded-full border border-white/20" style="background: #eab308" title="Sarı"></button> <button onclick="setQuickColor('#f97316')" class="w-8 h-8 rounded-full border border-white/20" style="background: #f97316" title="Turuncu"></button> <button onclick="setQuickColor('#a855f7')" class="w-8 h-8 rounded-full border border-white/20" style="background: #a855f7" title="Mor"></button> <button onclick="setQuickColor('#ec4899')" class="w-8 h-8 rounded-full border border-white/20" style="background: #ec4899" title="Pembe"></button> <button onclick="setQuickColor('#94a3b8')" class="w-8 h-8 rounded-full border border-white/20" style="background: #94a3b8" title="Gri"></button>
+       </div>
+       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center p-4 bg-slate-900 rounded-xl">
+        <div class="space-y-4">
+         <div>
+          <div class="flex justify-between text-xs mb-1"><span>R</span> <span id="r-val">253</span>
+          </div><input type="range" id="r-slider" min="0" max="255" value="253" oninput="updateRGB()" class="w-full accent-red-500">
+         </div>
+         <div>
+          <div class="flex justify-between text-xs mb-1"><span>G</span> <span id="g-val">230</span>
+          </div><input type="range" id="g-slider" min="0" max="255" value="230" oninput="updateRGB()" class="w-full accent-green-500">
+         </div>
+         <div>
+          <div class="flex justify-between text-xs mb-1"><span>B</span> <span id="b-val">138</span>
+          </div><input type="range" id="b-slider" min="0" max="255" value="138" oninput="updateRGB()" class="w-full accent-blue-500">
+         </div>
+        </div>
+        <div class="flex flex-col items-center gap-2">
+         <label class="text-xs text-slate-400">Renk Tekeri</label> <input type="color" id="note-color-picker" oninput="syncFromPicker(this.value)" value="#fde68a" class="w-24 h-24 rounded-full overflow-hidden border-none cursor-pointer bg-transparent">
+        </div>
+       </div>
+      </div><!-- Note Content -->
+      <div class="space-y-2">
+       <label class="block text-sm font-medium">Notunuz</label> <textarea id="note-text" rows="4" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 resize-none" placeholder="Neler hatırlamak istersin?"></textarea>
+      </div><!-- Image -->
+      <div class="space-y-2">
+       <label class="block text-sm font-medium">Fotoğraf (Opsiyonel)</label>
+       <div class="relative group h-32 w-full border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center hover:border-indigo-500 transition-colors">
+        <input type="file" id="note-image" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer">
+        <div id="image-preview-label" class="flex flex-col items-center text-slate-500 group-hover:text-indigo-400">
+         <i data-lucide="image-plus" class="w-8 h-8"></i> <span class="text-xs mt-1">Görsel Seçin</span>
+        </div><img id="image-preview" class="hidden absolute inset-0 w-full h-full object-cover rounded-xl">
+       </div><button type="button" id="remove-image-btn" onclick="removeNoteImage()" class="hidden w-full py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"> <i data-lucide="trash-2" class="w-4 h-4"></i> Fotoğrafı Kaldır </button>
+      </div>
+     </div>
+     <div class="p-6 border-t border-slate-700 bg-slate-800/50 flex gap-3">
+      <button id="save-note-btn" onclick="saveNote()" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2"> <span id="save-btn-text">Notu Kaydet</span>
+       <div id="save-loader" class="hidden animate-spin w-5 h-5 border-2 border-white/20 border-t-white rounded-full"></div></button> <button onclick="toggleModal('note-modal', false)" class="px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold transition-colors">İptal</button>
+     </div>
+    </div>
+   </div><!-- Edit Note Modal -->
+   <div id="edit-note-modal" class="modal-backdrop fixed inset-0 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90%]">
+     <div class="p-6 border-b border-slate-700 flex justify-between items-center">
+      <h3 class="text-xl font-bold">Notu Düzenle</h3><button onclick="toggleModal('edit-note-modal', false)" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button>
+     </div>
+     <div class="p-6 overflow-auto custom-scrollbar space-y-6">
+      <!-- Lesson Select -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+       <div>
+        <label class="block text-sm font-medium mb-1">Ders Seçin</label> <select id="edit-note-lesson" onchange="toggleOtherLesson(this.value, true)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 outline-none"> <option value="">Seçiniz</option> <option value="Matematik">Matematik</option> <option value="Edebiyat">Edebiyat</option> <option value="Fizik">Fizik</option> <option value="Kimya">Kimya</option> <option value="Biyoloji">Biyoloji</option> <option value="Coğrafya">Coğrafya</option> <option value="İngilizce">İngilizce</option> <option value="Almanca">Almanca</option> <option value="Din Kültürü">Din Kültürü</option> <option value="Diğer">Diğer</option> </select>
+       </div>
+       <div id="edit-other-lesson-container" class="hidden">
+        <label class="block text-sm font-medium mb-1">Ders Adı Yazın</label> <input type="text" id="edit-note-custom-lesson" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 outline-none" placeholder="Ders ismi...">
+       </div>
+      </div><!-- Color Picker Section -->
+      <div class="space-y-4">
+       <label class="block text-sm font-medium">Post-it Rengi</label>
+       <div class="flex flex-wrap gap-2">
+        <button onclick="setQuickColorEdit('#ffffff')" class="w-8 h-8 rounded-full border border-white/20" style="background: #ffffff" title="Beyaz"></button> <button onclick="setQuickColorEdit('#3b82f6')" class="w-8 h-8 rounded-full border border-white/20" style="background: #3b82f6" title="Mavi"></button> <button onclick="setQuickColorEdit('#ef4444')" class="w-8 h-8 rounded-full border border-white/20" style="background: #ef4444" title="Kırmızı"></button> <button onclick="setQuickColorEdit('#22c55e')" class="w-8 h-8 rounded-full border border-white/20" style="background: #22c55e" title="Yeşil"></button> <button onclick="setQuickColorEdit('#eab308')" class="w-8 h-8 rounded-full border border-white/20" style="background: #eab308" title="Sarı"></button> <button onclick="setQuickColorEdit('#f97316')" class="w-8 h-8 rounded-full border border-white/20" style="background: #f97316" title="Turuncu"></button> <button onclick="setQuickColorEdit('#a855f7')" class="w-8 h-8 rounded-full border border-white/20" style="background: #a855f7" title="Mor"></button> <button onclick="setQuickColorEdit('#ec4899')" class="w-8 h-8 rounded-full border border-white/20" style="background: #ec4899" title="Pembe"></button> <button onclick="setQuickColorEdit('#94a3b8')" class="w-8 h-8 rounded-full border border-white/20" style="background: #94a3b8" title="Gri"></button>
+       </div>
+       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center p-4 bg-slate-900 rounded-xl">
+        <div class="space-y-4">
+         <div>
+          <div class="flex justify-between text-xs mb-1"><span>R</span> <span id="edit-r-val">253</span>
+          </div><input type="range" id="edit-r-slider" min="0" max="255" value="253" oninput="updateRGBEdit()" class="w-full accent-red-500">
+         </div>
+         <div>
+          <div class="flex justify-between text-xs mb-1"><span>G</span> <span id="edit-g-val">230</span>
+          </div><input type="range" id="edit-g-slider" min="0" max="255" value="230" oninput="updateRGBEdit()" class="w-full accent-green-500">
+         </div>
+         <div>
+          <div class="flex justify-between text-xs mb-1"><span>B</span> <span id="edit-b-val">138</span>
+          </div><input type="range" id="edit-b-slider" min="0" max="255" value="138" oninput="updateRGBEdit()" class="w-full accent-blue-500">
+         </div>
+        </div>
+        <div class="flex flex-col items-center gap-2">
+         <label class="text-xs text-slate-400">Renk Tekeri</label> <input type="color" id="edit-note-color-picker" oninput="syncFromPickerEdit(this.value)" value="#fde68a" class="w-24 h-24 rounded-full overflow-hidden border-none cursor-pointer bg-transparent">
+        </div>
+       </div>
+      </div><!-- Note Content -->
+      <div class="space-y-2">
+       <label class="block text-sm font-medium">Notunuz</label> <textarea id="edit-note-text" rows="4" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 resize-none" placeholder="Neler hatırlamak istersin?"></textarea>
+      </div><!-- Image Management -->
+      <div class="space-y-2">
+       <label class="block text-sm font-medium">Fotoğraf (Opsiyonel)</label>
+       <div id="edit-image-section" class="space-y-2">
+        <div id="edit-current-image-container" class="hidden">
+         <div class="flex gap-2 items-end">
+          <div class="relative">
+           <img id="edit-current-image" src="" alt="Mevcut fotoğraf" class="w-32 h-32 object-cover rounded-lg">
+           <div class="absolute -top-2 -right-2 flex gap-1"><button onclick="editNoteChangeImage()" class="bg-indigo-600 hover:bg-indigo-700 p-2 rounded-full text-white" title="Fotoğrafı Değiştir"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button> <button onclick="editNoteRemoveImage()" class="bg-red-600 hover:bg-red-700 p-2 rounded-full text-white" title="Fotoğrafı Sil"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+           </div>
+          </div>
+          <div class="flex-1 space-y-2">
+           <p class="text-xs text-slate-400">Mevcut Fotoğraf</p>
+           <p class="text-xs text-slate-500">Yeni bir seçerek değiştirebilirsin</p>
+          </div>
+         </div>
+        </div>
+        <div class="relative group h-32 w-full border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center hover:border-indigo-500 transition-colors">
+         <input type="file" id="edit-note-image" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer">
+         <div id="edit-image-preview-label" class="flex flex-col items-center text-slate-500 group-hover:text-indigo-400">
+          <i data-lucide="image-plus" class="w-8 h-8"></i> <span class="text-xs mt-1">Görsel Seçin</span>
+         </div><img id="edit-image-preview" class="hidden absolute inset-0 w-full h-full object-cover rounded-xl">
+        </div>
+       </div>
+      </div>
+     </div>
+     <div class="p-6 border-t border-slate-700 bg-slate-800/50 flex gap-3">
+      <button id="edit-save-note-btn" onclick="updateNote()" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2"> <span id="edit-save-btn-text">Notu Güncelle</span>
+       <div id="edit-save-loader" class="hidden animate-spin w-5 h-5 border-2 border-white/20 border-t-white rounded-full"></div></button> <button onclick="toggleModal('edit-note-modal', false)" class="px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold transition-colors">İptal</button>
+     </div>
+    </div>
+   </div><!-- Settings Modal -->
+   <div id="settings-modal" class="modal-backdrop fixed inset-0 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+     <div class="p-6 border-b border-slate-700 flex justify-between items-center">
+      <h3 class="text-xl font-bold">Hesap Ayarları</h3><button onclick="toggleModal('settings-modal', false)" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button>
+     </div>
+     <div class="p-6 space-y-8">
+      <!-- Change Name -->
+      <div class="space-y-4">
+       <h4 class="text-sm font-bold text-indigo-400 uppercase tracking-wider">İsim Değiştir</h4>
+       <div class="space-y-3">
+        <input type="text" id="set-old-name" placeholder="Eski İsim" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm outline-none"> <input type="password" id="set-old-pass-name" placeholder="Eski Şifre" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm outline-none"> <input type="text" id="set-new-name" placeholder="Yeni İsim" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm outline-none">
+       </div><button onclick="updateName()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm font-bold">İsmi Güncelle</button>
+      </div>
+      <div class="h-px bg-slate-700"></div><!-- Change Password -->
+      <div class="space-y-4">
+       <h4 class="text-sm font-bold text-emerald-400 uppercase tracking-wider">Şifre Değiştir</h4>
+       <div class="space-y-3">
+        <input type="text" id="set-name-pass" placeholder="İsim" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm outline-none"> <input type="password" id="set-old-pass" placeholder="Eski Şifre" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm outline-none"> <input type="password" id="set-new-pass" placeholder="Yeni Şifre" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm outline-none"> <input type="password" id="set-new-pass-confirm" placeholder="Yeni Şifre Tekrar" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm outline-none">
+       </div><button onclick="updatePassword()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-sm font-bold">Şifreyi Güncelle</button>
+      </div>
+     </div>
+    </div>
+   </div><!-- Image Viewer Modal -->
+   <div id="image-viewer-modal" class="fixed inset-0 hidden z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.95);">
+    <div class="relative w-full h-full flex items-center justify-center"><button onclick="closeImageViewer()" class="absolute top-4 right-4 bg-slate-800 hover:bg-slate-700 p-2 rounded-lg text-white z-10"><i data-lucide="x" class="w-6 h-6"></i></button> <button onclick="rotateImage()" class="absolute top-4 left-4 bg-slate-800 hover:bg-slate-700 p-2 rounded-lg text-white z-10" title="90° Döndür"><i data-lucide="rotate-cw" class="w-6 h-6"></i></button> <img id="image-viewer-src" src="" alt="Tam boyut fotoğraf" class="max-w-[95%] max-h-[95%] w-auto h-auto object-contain transition-transform duration-300">
+    </div>
+   </div>
+  </div>
+  <script>
+        // State
+        let currentUser = null;
+        let allData = [];
+        let currentEditingNote = null;
+        let currentEditingUser = null;
+        let currentEditingAdminNote = null;
+        let imageRotation = 0;
+        let selectedAdminUser = null;
+        let isLoggedInAsAdminUser = false;
+        let config = {
+            app_title: "Akıllı Post-it",
+            welcome_message: "Notlarını güvenle sakla ve organize et."
+        };
+
+        // Local image storage - only in memory, NOT sent to database
+        const noteImages = new Map();
+
+        // UI Helpers
+        let toastTimeout;
+        const showToast = (message, type = 'info') => {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toast-icon');
+            const msg = document.getElementById('toast-message');
+            
+            // Clear previous timeout if exists
+            if (toastTimeout) {
+                clearTimeout(toastTimeout);
+            }
+            
+            toast.className = `fixed bottom-6 left-1/2 -translate-x-1/2 transform transition-all duration-300 z-[100] px-6 py-3 border rounded-full shadow-2xl flex items-center gap-3 pointer-events-none`;
+            toast.classList.remove('opacity-0', 'translate-y-20');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            
+            if (type === 'error') {
+                toast.className = toast.className + ' bg-red-900/90 border-red-500 text-white';
+                icon.innerHTML = '<i data-lucide="alert-circle" class="w-4 h-4"></i>';
+            } else if (type === 'success') {
+                toast.className = toast.className + ' bg-emerald-900/90 border-emerald-500 text-white';
+                icon.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i>';
+            } else {
+                toast.className = toast.className + ' bg-slate-800/90 border-slate-600 text-white';
+                icon.innerHTML = '<i data-lucide="info" class="w-4 h-4"></i>';
+            }
+            
+            msg.textContent = message;
+            lucide.createIcons();
+            
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-20');
+            }, 3000);
+        };
+
+        const toggleModal = (id, show) => {
+            document.getElementById(id).classList.toggle('hidden', !show);
+            if (id === 'note-modal' && !show) {
+                resetNoteForm();
+            }
+            if (id === 'edit-note-modal' && !show) {
+                resetEditForm();
+                currentEditingNote = null;
+            }
+            if (id === 'image-viewer-modal' && !show) {
+                imageRotation = 0;
+            }
+        };
+
+        const showAuthForm = (type) => {
+            document.getElementById('auth-initial').classList.add('hidden');
+            document.getElementById('form-container').classList.remove('hidden');
+            document.getElementById('login-form').classList.toggle('hidden', type !== 'login');
+            document.getElementById('register-form').classList.toggle('hidden', type !== 'register');
+        };
+
+        const resetAuthView = () => {
+            document.getElementById('auth-initial').classList.remove('hidden');
+            document.getElementById('form-container').classList.add('hidden');
+        };
+
+        const lessonColors = {
+            'Matematik': '#3b82f6',      // Mavi
+            'Edebiyat': '#ef4444',       // Kırmızı
+            'Fizik': '#87ceeb',          // Açık Mavi
+            'Kimya': '#808080',          // Gri
+            'Biyoloji': '#22c55e',       // Yeşil
+            'Coğrafya': '#1b6b3d',       // Koyu Yeşil
+            'İngilizce': '#a855f7',      // Mor
+            'Almanca': '#fbbf24',        // Sarı
+            'Din Kültürü': '#06b6d4',    // Turkuaz
+            'Tarih': '#94a3b8'           // Gri
+        };
+
+        const toggleOtherLesson = (val, isEdit = false) => {
+            const container = isEdit ? document.getElementById('edit-other-lesson-container') : document.getElementById('other-lesson-container');
+            container.classList.toggle('hidden', val !== 'Diğer');
+            
+            // Auto-set color based on lesson
+            const color = lessonColors[val];
+            if (color) {
+                if (isEdit) {
+                    setQuickColorEdit(color);
+                } else {
+                    setQuickColor(color);
+                }
+            }
+        };
+
+        // Auth Logic
+        async function handleRegister() {
+            const user = document.getElementById('reg-username').value.trim();
+            const pass = document.getElementById('reg-password').value;
+            const confirm = document.getElementById('reg-password-confirm').value;
+
+            if (user.length < 3 || user.length > 15 || !/^[a-zA-Z0-9]+$/.test(user)) {
+                return showToast('İsim 3-15 hane arası harf veya sayı olmalıdır.', 'error');
+            }
+            if (pass.length < 4 || pass.length > 20) {
+                return showToast('Şifre 4-20 hane arası olmalıdır.', 'error');
+            }
+            if (pass !== confirm) {
+                return showToast('Şifreler uyuşmuyor!', 'error');
+            }
+
+            // Check if user exists
+            const existing = allData.find(d => d.entry_type === 'user' && d.username === user);
+            if (existing) {
+                return showToast('Bu kullanıcı adı zaten alınmış.', 'error');
+            }
+
+            const result = await window.dataSdk.create({
+                entry_type: 'user',
+                username: user,
+                password_hash: btoa(pass),
+                created_at: new Date().toISOString()
+            });
+
+            if (result.isOk) {
+                showToast('Kayıt başarılı! Hoş geldin!', 'success');
+                // Auto-login after registration
+                const newUser = allData.find(d => d.entry_type === 'user' && d.username === user);
+                if (newUser) {
+                    currentUser = newUser;
+                    showBoard();
+                }
+            } else {
+                showToast('Kayıt sırasında hata oluştu.', 'error');
+            }
+        }
+
+        async function handleLogin() {
+            const user = document.getElementById('login-username').value.trim();
+            const pass = document.getElementById('login-password').value;
+
+            // Admin check
+            if (user === 'yönetici' && pass === 'oznuslu2324') {
+                currentUser = { username: 'yönetici', is_admin: true };
+                showAdminPanel();
+                showToast('Admin paneline hoş geldin! 👑', 'success');
+                return;
+            }
+
+            const found = allData.find(d => 
+                d.entry_type === 'user' && 
+                d.username === user && 
+                d.password_hash === btoa(pass)
+            );
+
+            if (found) {
+                currentUser = found;
+                showBoard();
+                showToast(`Hoş geldin, ${user}!`, 'success');
+            } else {
+                showToast('Hatalı kullanıcı adı veya şifre.', 'error');
+            }
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            currentEditingUser = null;
+            currentEditingNote = null;
+            isLoggedInAsAdminUser = false;
+            document.getElementById('board-view').classList.add('hidden');
+            document.getElementById('admin-view').classList.add('hidden');
+            document.getElementById('auth-view').classList.remove('hidden');
+            document.getElementById('back-to-admin-btn').classList.add('hidden');
+            resetAuthView();
+        }
+
+        // Color Management
+        function updateRGB() {
+            const r = document.getElementById('r-slider').value;
+            const g = document.getElementById('g-slider').value;
+            const b = document.getElementById('b-slider').value;
+            
+            document.getElementById('r-val').textContent = r;
+            document.getElementById('g-val').textContent = g;
+            document.getElementById('b-val').textContent = b;
+            
+            const hex = "#" + ((1 << 24) + (parseInt(r) << 16) + (parseInt(g) << 8) + parseInt(b)).toString(16).slice(1);
+            document.getElementById('note-color-picker').value = hex;
+        }
+
+        function updateRGBEdit() {
+            const r = document.getElementById('edit-r-slider').value;
+            const g = document.getElementById('edit-g-slider').value;
+            const b = document.getElementById('edit-b-slider').value;
+            
+            document.getElementById('edit-r-val').textContent = r;
+            document.getElementById('edit-g-val').textContent = g;
+            document.getElementById('edit-b-val').textContent = b;
+            
+            const hex = "#" + ((1 << 24) + (parseInt(r) << 16) + (parseInt(g) << 8) + parseInt(b)).toString(16).slice(1);
+            document.getElementById('edit-note-color-picker').value = hex;
+        }
+
+        function syncFromPicker(hex) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            
+            document.getElementById('r-slider').value = r;
+            document.getElementById('g-slider').value = g;
+            document.getElementById('b-slider').value = b;
+            document.getElementById('r-val').textContent = r;
+            document.getElementById('g-val').textContent = g;
+            document.getElementById('b-val').textContent = b;
+        }
+
+        function syncFromPickerEdit(hex) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            
+            document.getElementById('edit-r-slider').value = r;
+            document.getElementById('edit-g-slider').value = g;
+            document.getElementById('edit-b-slider').value = b;
+            document.getElementById('edit-r-val').textContent = r;
+            document.getElementById('edit-g-val').textContent = g;
+            document.getElementById('edit-b-val').textContent = b;
+        }
+
+        function setQuickColor(hex) {
+            document.getElementById('note-color-picker').value = hex;
+            syncFromPicker(hex);
+        }
+
+        function setQuickColorEdit(hex) {
+            document.getElementById('edit-note-color-picker').value = hex;
+            syncFromPickerEdit(hex);
+        }
+
+        function getContrastYIQ(hexcolor){
+            hexcolor = hexcolor.replace("#", "");
+            var r = parseInt(hexcolor.substr(0,2),16);
+            var g = parseInt(hexcolor.substr(2,2),16);
+            var b = parseInt(hexcolor.substr(4,2),16);
+            var yiq = ((r*299)+(g*587)+(b*114))/1000;
+            return (yiq >= 128) ? '#1e293b' : 'white';
+        }
+
+        // Note Logic
+        async function saveNote() {
+            const lesson = document.getElementById('note-lesson').value;
+            const customLesson = document.getElementById('note-custom-lesson').value;
+            const content = document.getElementById('note-text').value.trim();
+            const color = document.getElementById('note-color-picker').value;
+            const file = document.getElementById('note-image').files[0];
+
+            if (lesson === 'Diğer' && !customLesson.trim()) {
+                return showToast('Lütfen ders adını belirtin.', 'error');
+            }
+
+            if (!content && !file) {
+                return showToast('Lütfen bir not veya fotoğraf ekleyin.', 'error');
+            }
+
+            document.getElementById('save-loader').classList.remove('hidden');
+            document.getElementById('save-btn-text').classList.add('hidden');
+
+            const noteId = 'note_' + Date.now();
+            let imageUrl = '';
+
+            // Process image if provided
+            if (file) {
+                if (file.size > 50 * 1024 * 1024) {
+                    showToast('Fotoğraf çok büyük (Max 50MB).', 'error');
+                    document.getElementById('save-loader').classList.add('hidden');
+                    document.getElementById('save-btn-text').classList.remove('hidden');
+                    return;
+                }
+
+                try {
+                    const readPromise = new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            // Store original quality image
+                            imageUrl = e.target.result;
+                            noteImages.set(noteId, imageUrl);
+                            // Also save to sessionStorage so it persists on refresh
+                            sessionStorage.setItem('img_' + noteId, imageUrl);
+                            resolve();
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                    
+                    await readPromise;
+                } catch (e) {
+                    // Continue even if image fails
+                }
+            }
+
+            // Save note to database WITHOUT image data
+            const noteData = {
+                entry_type: 'note',
+                username: currentUser.username,
+                lesson: lesson,
+                custom_lesson_name: lesson === 'Diğer' ? customLesson : '',
+                note_content: content,
+                note_id: noteId,
+                bg_color: color,
+                text_color: getContrastYIQ(color),
+                created_at: new Date().toISOString(),
+                edited_at: new Date().toISOString()
+            };
+
+            try {
+                const result = await window.dataSdk.create(noteData);
+                document.getElementById('save-loader').classList.add('hidden');
+                document.getElementById('save-btn-text').classList.remove('hidden');
+
+                if (result.isOk) {
+                    showToast('Notun başarıyla kaydedildi! 📝', 'success');
+                    toggleModal('note-modal', false);
+                } else {
+                    showToast('Hata: ' + (result.error?.message || 'Bilinmeyen hata'), 'error');
+                }
+            } catch (error) {
+                document.getElementById('save-loader').classList.add('hidden');
+                document.getElementById('save-btn-text').classList.remove('hidden');
+                showToast('Not kaydedilirken hata oluştu.', 'error');
+            }
+        }
+
+        async function updateNote() {
+            const lesson = document.getElementById('edit-note-lesson').value;
+            const customLesson = document.getElementById('edit-note-custom-lesson').value;
+            const content = document.getElementById('edit-note-text').value.trim();
+            const color = document.getElementById('edit-note-color-picker').value;
+            const file = document.getElementById('edit-note-image').files[0];
+
+            if (lesson === 'Diğer' && !customLesson.trim()) {
+                return showToast('Lütfen ders adını belirtin.', 'error');
+            }
+
+            document.getElementById('edit-save-loader').classList.remove('hidden');
+            document.getElementById('edit-save-btn-text').classList.add('hidden');
+
+            let imageUrl = '';
+
+            // Process image if provided
+            if (file) {
+                if (file.size > 50 * 1024 * 1024) {
+                    showToast('Fotoğraf çok büyük (Max 50MB).', 'error');
+                    document.getElementById('edit-save-loader').classList.add('hidden');
+                    document.getElementById('edit-save-btn-text').classList.remove('hidden');
+                    return;
+                }
+
+                try {
+                    const readPromise = new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (e2) => {
+                            // Store original quality image
+                            imageUrl = e2.target.result;
+                            noteImages.set(currentEditingNote.note_id, imageUrl);
+                            // Also save to sessionStorage so it persists on refresh
+                            sessionStorage.setItem('img_' + currentEditingNote.note_id, imageUrl);
+                            resolve();
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                    
+                    await readPromise;
+                } catch (e) {
+                    // Continue even if image fails
+                }
+            }
+
+            // Update note in database
+            const updatedNote = { ...currentEditingNote,
+                lesson: lesson,
+                custom_lesson_name: lesson === 'Diğer' ? customLesson : '',
+                note_content: content,
+                bg_color: color,
+                text_color: getContrastYIQ(color),
+                edited_at: new Date().toISOString()
+            };
+
+            try {
+                const result = await window.dataSdk.update(updatedNote);
+                document.getElementById('edit-save-loader').classList.add('hidden');
+                document.getElementById('edit-save-btn-text').classList.remove('hidden');
+
+                if (result.isOk) {
+                    showToast('Notun başarıyla güncellendi! 📝', 'success');
+                    toggleModal('edit-note-modal', false);
+                    currentEditingNote = null;
+                } else {
+                    showToast('Hata: ' + (result.error?.message || 'Bilinmeyen hata'), 'error');
+                }
+            } catch (error) {
+                document.getElementById('edit-save-loader').classList.add('hidden');
+                document.getElementById('edit-save-btn-text').classList.remove('hidden');
+                showToast('Not güncellenirken hata oluştu.', 'error');
+            }
+        }
+
+        function openEditModal(note) {
+            currentEditingNote = note;
+            document.getElementById('edit-note-lesson').value = note.lesson;
+            document.getElementById('edit-note-custom-lesson').value = note.custom_lesson_name || '';
+            document.getElementById('edit-note-text').value = note.note_content;
+            document.getElementById('edit-note-color-picker').value = note.bg_color;
+            syncFromPickerEdit(note.bg_color);
+            toggleOtherLesson(note.lesson, true);
+
+            const imageUrl = noteImages.get(note.note_id);
+            if (imageUrl) {
+                document.getElementById('edit-current-image').src = imageUrl;
+                document.getElementById('edit-current-image-container').classList.remove('hidden');
+            } else {
+                document.getElementById('edit-current-image-container').classList.add('hidden');
+            }
+
+            document.getElementById('edit-image-preview').classList.add('hidden');
+            document.getElementById('edit-image-preview-label').classList.remove('hidden');
+            document.getElementById('edit-note-image').value = '';
+
+            toggleModal('edit-note-modal', true);
+        }
+
+        function startEditNote(backendId) {
+            const note = allData.find(d => d.__backendId === backendId);
+            if (note) {
+                openEditModal(note);
+            }
+        }
+
+        function editNoteRemoveImage() {
+            if (currentEditingNote) {
+                noteImages.delete(currentEditingNote.note_id);
+                document.getElementById('edit-current-image-container').classList.add('hidden');
+                document.getElementById('edit-image-preview').classList.add('hidden');
+                document.getElementById('edit-image-preview-label').classList.remove('hidden');
+                document.getElementById('edit-note-image').value = '';
+                showToast('Fotoğraf silindi.', 'info');
+            }
+        }
+
+        function editNoteChangeImage() {
+            document.getElementById('edit-note-image').click();
+        }
+
+        function resetNoteForm() {
+            document.getElementById('note-lesson').value = '';
+            document.getElementById('note-custom-lesson').value = '';
+            document.getElementById('note-text').value = '';
+            document.getElementById('note-image').value = '';
+            document.getElementById('image-preview').classList.add('hidden');
+            document.getElementById('image-preview-label').classList.remove('hidden');
+            document.getElementById('remove-image-btn').classList.add('hidden');
+            setQuickColor('#ffffff');
+            toggleOtherLesson('');
+        }
+
+        function resetEditForm() {
+            document.getElementById('edit-note-lesson').value = '';
+            document.getElementById('edit-note-custom-lesson').value = '';
+            document.getElementById('edit-note-text').value = '';
+            document.getElementById('edit-note-image').value = '';
+            document.getElementById('edit-image-preview').classList.add('hidden');
+            document.getElementById('edit-image-preview-label').classList.remove('hidden');
+            document.getElementById('edit-current-image-container').classList.add('hidden');
+            setQuickColorEdit('#ffffff');
+            toggleOtherLesson('', true);
+        }
+
+        // Image Preview Handlers
+        document.getElementById('note-image').addEventListener('change', function(e) {
+            if (e.target.files[0]) {
+                const file = e.target.files[0];
+                if (file.size > 50 * 1024 * 1024) {
+                    showToast('Fotoğraf çok büyük (Max 50MB)', 'error');
+                    e.target.value = '';
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function() {
+                    const preview = document.getElementById('image-preview');
+                    const label = document.getElementById('image-preview-label');
+                    preview.src = reader.result;
+                    preview.classList.remove('hidden');
+                    label.classList.add('hidden');
+                    document.getElementById('remove-image-btn').classList.remove('hidden');
+                    lucide.createIcons();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function removeNoteImage() {
+            document.getElementById('note-image').value = '';
+            document.getElementById('image-preview').classList.add('hidden');
+            document.getElementById('image-preview-label').classList.remove('hidden');
+            document.getElementById('remove-image-btn').classList.add('hidden');
+            showToast('Fotoğraf kaldırıldı.', 'info');
+        }
+
+        document.getElementById('edit-note-image').addEventListener('change', function(e) {
+            if (e.target.files[0]) {
+                const file = e.target.files[0];
+                if (file.size > 50 * 1024 * 1024) {
+                    showToast('Fotoğraf çok büyük (Max 50MB)', 'error');
+                    e.target.value = '';
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function() {
+                    const preview = document.getElementById('edit-image-preview');
+                    const label = document.getElementById('edit-image-preview-label');
+                    preview.src = reader.result;
+                    preview.classList.remove('hidden');
+                    label.classList.add('hidden');
+                    lucide.createIcons();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Board Display
+        function showBoard() {
+            document.getElementById('auth-view').classList.add('hidden');
+            document.getElementById('admin-view').classList.add('hidden');
+            document.getElementById('board-view').classList.remove('hidden');
+            document.getElementById('display-name').textContent = currentUser.username;
+            renderNotes();
+        }
+
+        function showAdminPanel() {
+            document.getElementById('auth-view').classList.add('hidden');
+            document.getElementById('board-view').classList.add('hidden');
+            document.getElementById('admin-view').classList.remove('hidden');
+            renderAdminPanel();
+        }
+
+        function renderAdminPanel() {
+            const usersList = document.getElementById('admin-users-list');
+            const notesList = document.getElementById('admin-notes-list');
+
+            const allUsers = allData.filter(d => d.entry_type === 'user');
+            const allNotes = allData.filter(d => d.entry_type === 'note');
+
+            // Render Users
+            usersList.innerHTML = allUsers.map(user => `
+                <div class="bg-slate-900 p-4 rounded-lg border border-slate-700 flex justify-between items-center">
+                    <div class="flex-1">
+                        <p class="font-medium text-sm">${user.username}</p>
+                        <p class="text-xs text-slate-400">Kayıt: ${new Date(user.created_at).toLocaleDateString('tr-TR')}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="loginAsUser('${user.__backendId}')" class="bg-emerald-600 hover:bg-emerald-700 px-3 py-1 rounded text-sm font-medium transition-colors">
+                            Hesaba Giriş Yap
+                        </button>
+                        <button onclick="openEditUserModal('${user.__backendId}')" class="bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded text-sm font-medium transition-colors">
+                            Düzenle
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Render Notes
+            notesList.innerHTML = allNotes.map(note => `
+                <div class="bg-slate-900 p-4 rounded-lg border border-slate-700">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex-1">
+                            <p class="font-medium text-sm">${note.username} - ${note.lesson === 'Diğer' ? note.custom_lesson_name : note.lesson}</p>
+                            <p class="text-xs text-slate-400 line-clamp-2">${note.note_content}</p>
+                        </div>
+                        <button onclick="openEditAdminNoteModal('${note.__backendId}')" class="bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded text-sm font-medium transition-colors flex-shrink-0">
+                            Düzenle
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        function renderAdminPanel() {
+            const usersList = document.getElementById('admin-users-list');
+
+            const allUsers = allData.filter(d => d.entry_type === 'user');
+
+            // Render Users
+            usersList.innerHTML = allUsers.map(user => `
+                <div class="bg-slate-900 p-4 rounded-lg border border-slate-700 flex justify-between items-center">
+                    <div class="flex-1">
+                        <p class="font-medium text-sm">${user.username}</p>
+                        <p class="text-xs text-slate-400">Kayıt: ${new Date(user.created_at).toLocaleDateString('tr-TR')}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="selectUserAndShowNotes('${user.__backendId}')" class="bg-emerald-600 hover:bg-emerald-700 px-3 py-1 rounded text-sm font-medium transition-colors">
+                            Notlarını Gör
+                        </button>
+                        <button onclick="openEditUserModal('${user.__backendId}')" class="bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded text-sm font-medium transition-colors">
+                            Düzenle
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Clear notes list if no user selected
+            if (!selectedAdminUser) {
+                document.getElementById('admin-notes-list').classList.add('hidden');
+                document.getElementById('admin-notes-empty').classList.remove('hidden');
+                document.getElementById('admin-notes-back-btn').classList.add('hidden');
+                document.getElementById('admin-notes-title').textContent = 'Notlar';
+            }
+
+            lucide.createIcons();
+        }
+
+        function openEditUserModal(backendId) {
+            const user = allData.find(d => d.__backendId === backendId);
+            if (user) {
+                currentEditingUser = user;
+                document.getElementById('admin-edit-username').value = user.username;
+                document.getElementById('admin-edit-newpass').value = '';
+                toggleModal('admin-user-modal', true);
+            }
+        }
+
+        function loginAsUser(backendId) {
+            const user = allData.find(d => d.__backendId === backendId);
+            if (!user) return;
+
+            currentUser = user;
+            showBoard();
+            showToast(`${user.username} olarak giriş yaptın! 👤`, 'success');
+        }
+
+        function selectUserAndShowNotes(backendId) {
+            const user = allData.find(d => d.__backendId === backendId);
+            if (!user) return;
+
+            currentUser = user;
+            isLoggedInAsAdminUser = true;
+            showBoard();
+            document.getElementById('back-to-admin-btn').classList.remove('hidden');
+            showToast(`${user.username} hesabına giriş yaptın! 👤`, 'success');
+        }
+
+        function clearSelectedUser() {
+            selectedAdminUser = null;
+            const notesList = document.getElementById('admin-notes-list');
+            notesList.classList.add('hidden');
+            document.getElementById('admin-notes-empty').classList.remove('hidden');
+            document.getElementById('admin-notes-back-btn').classList.add('hidden');
+            document.getElementById('admin-notes-title').textContent = 'Notlar';
+        }
+
+        function backToAdminPanel() {
+            isLoggedInAsAdminUser = false;
+            currentUser = null;
+            document.getElementById('board-view').classList.add('hidden');
+            document.getElementById('admin-view').classList.remove('hidden');
+            document.getElementById('back-to-admin-btn').classList.add('hidden');
+            renderAdminPanel();
+            showToast('Admin paneline döndün.', 'info');
+        }
+
+        async function saveUserChanges() {
+            const newPass = document.getElementById('admin-edit-newpass').value.trim();
+
+            if (!currentEditingUser) return;
+
+            let updatedUser = { ...currentEditingUser };
+            
+            if (newPass) {
+                updatedUser.password_hash = btoa(newPass);
+            }
+
+            const result = await window.dataSdk.update(updatedUser);
+            if (result.isOk) {
+                showToast('Kullanıcı değişiklikleri kaydedildi.', 'success');
+                toggleModal('admin-user-modal', false);
+                currentEditingUser = null;
+                renderAdminPanel();
+            } else {
+                showToast('Hata oluştu.', 'error');
+            }
+        }
+
+        async function deleteUserFromAdmin() {
+            if (!currentEditingUser) return;
+
+            const result = await window.dataSdk.delete(currentEditingUser);
+            if (result.isOk) {
+                showToast('Hesap silindi.', 'info');
+                toggleModal('admin-user-modal', false);
+                currentEditingUser = null;
+                if (selectedAdminUser && selectedAdminUser.__backendId === currentEditingUser.__backendId) {
+                    clearSelectedUser();
+                }
+                renderAdminPanel();
+            } else {
+                showToast('Hata oluştu.', 'error');
+            }
+        }
+
+        function openEditAdminNoteModal(backendId) {
+            const note = allData.find(d => d.__backendId === backendId);
+            if (note) {
+                currentEditingAdminNote = note;
+                document.getElementById('admin-note-user').value = note.username;
+                document.getElementById('admin-note-lesson').value = note.lesson === 'Diğer' ? note.custom_lesson_name : note.lesson;
+                document.getElementById('admin-note-content').value = note.note_content;
+                toggleModal('admin-note-modal', true);
+            }
+        }
+
+        async function saveNoteChanges() {
+            const lesson = document.getElementById('admin-note-lesson').value.trim();
+            const content = document.getElementById('admin-note-content').value.trim();
+
+            if (!currentEditingAdminNote) return;
+
+            let updatedNote = { ...currentEditingAdminNote };
+            updatedNote.lesson = lesson;
+            updatedNote.note_content = content;
+            updatedNote.edited_at = new Date().toISOString();
+
+            const result = await window.dataSdk.update(updatedNote);
+            if (result.isOk) {
+                showToast('Not değişiklikleri kaydedildi.', 'success');
+                toggleModal('admin-note-modal', false);
+                currentEditingAdminNote = null;
+                if (selectedAdminUser) {
+                    selectUserAndShowNotes(selectedAdminUser.__backendId);
+                }
+            } else {
+                showToast('Hata oluştu.', 'error');
+            }
+        }
+
+        async function deleteNoteFromAdmin() {
+            if (!currentEditingAdminNote) return;
+
+            const result = await window.dataSdk.delete(currentEditingAdminNote);
+            if (result.isOk) {
+                showToast('Not silindi.', 'info');
+                toggleModal('admin-note-modal', false);
+                currentEditingAdminNote = null;
+                if (selectedAdminUser) {
+                    selectUserAndShowNotes(selectedAdminUser.__backendId);
+                }
+            } else {
+                showToast('Hata oluştu.', 'error');
+            }
+        }
+
+        // Store image dimensions
+        const imageDimensions = new Map();
+
+        function getImageDimensions(imageUrl) {
+            return new Promise((resolve) => {
+                if (imageDimensions.has(imageUrl)) {
+                    resolve(imageDimensions.get(imageUrl));
+                    return;
+                }
+
+                const img = new Image();
+                img.onload = function() {
+                    const dims = { width: this.naturalWidth, height: this.naturalHeight };
+                    imageDimensions.set(imageUrl, dims);
+                    resolve(dims);
+                };
+                img.onerror = function() {
+                    resolve({ width: 400, height: 300 });
+                };
+                img.src = imageUrl;
+            });
+        }
+
+        let searchQuery = '';
+
+        function handleSearch(query) {
+            searchQuery = query.toLowerCase().trim();
+            renderNotes();
+        }
+
+        function renderNotes() {
+            const container = document.getElementById('notes-grid');
+            const empty = document.getElementById('empty-state');
+            
+            let userNotes = allData.filter(d => d.entry_type === 'note' && d.username === currentUser.username);
+            
+            // Apply search filter
+            if (searchQuery) {
+                userNotes = userNotes.filter(note => {
+                    const lessonName = note.lesson === 'Diğer' ? note.custom_lesson_name : note.lesson;
+                    return note.note_content.toLowerCase().includes(searchQuery) || 
+                           lessonName.toLowerCase().includes(searchQuery);
+                });
+            }
+            
+            if (userNotes.length === 0) {
+                container.innerHTML = '';
+                if (searchQuery) {
+                    empty.innerHTML = `
+                        <div class="h-full flex flex-col items-center justify-center opacity-40">
+                            <i data-lucide="search-x" class="w-20 h-20 mb-4"></i>
+                            <p class="text-xl font-medium">"${searchQuery}" bulunamadı...</p>
+                            <p>Başka bir terimle araştırmayı dene</p>
+                        </div>
+                    `;
+                } else {
+                    empty.innerHTML = `
+                        <div class="h-full flex flex-col items-center justify-center opacity-40">
+                            <i data-lucide="ghost" class="w-20 h-20 mb-4"></i>
+                            <p class="text-xl font-medium">Henüz hiç notun yok...</p>
+                            <p>Sağ üstteki butona basarak ilk notunu ekleyebilirsin!</p>
+                        </div>
+                    `;
+                }
+                empty.classList.remove('hidden');
+                lucide.createIcons();
+                return;
+            }
+
+            empty.classList.add('hidden');
+            
+            // Group notes by lesson
+            const groupedByLesson = {};
+            userNotes.forEach(note => {
+                const lessonName = note.lesson === 'Diğer' ? note.custom_lesson_name : note.lesson;
+                if (!groupedByLesson[lessonName]) {
+                    groupedByLesson[lessonName] = [];
+                }
+                groupedByLesson[lessonName].push(note);
+            });
+
+            // Build grouped HTML
+            let html = '';
+            Object.keys(groupedByLesson).sort().forEach(lessonName => {
+                const notes = groupedByLesson[lessonName];
+                
+                html += `
+                    <div class="w-full">
+                        <h2 class="text-2xl font-bold mb-4 text-slate-300 flex items-center gap-2">
+                            <span class="inline-block w-1 h-6 bg-indigo-500 rounded"></span>
+                            ${lessonName}
+                        </h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                `;
+
+                notes.forEach((note) => {
+                    let imageUrl = noteImages.get(note.note_id);
+                    if (!imageUrl) {
+                        const stored = sessionStorage.getItem('img_' + note.note_id);
+                        if (stored) {
+                            imageUrl = stored;
+                            noteImages.set(note.note_id, imageUrl);
+                        }
+                    }
+
+                    html += `
+                        <div class="post-it rounded-2xl flex flex-col border border-black/5 overflow-hidden transition-all duration-300 h-96" 
+                             id="note-${note.__backendId}" 
+                             data-note-id="${note.__backendId}"
+                             style="background-color: ${note.bg_color}; color: ${note.text_color};">
+                            ${imageUrl ? `<img src="${imageUrl}" class="w-full h-40 object-cover cursor-pointer hover:opacity-90 transition-opacity flex-shrink-0" alt="Not görseli" onclick="openImageViewer('${imageUrl}')">` : ''}
+                            <div class="p-5 flex flex-col gap-3 flex-grow overflow-hidden">
+                                <div class="flex gap-1 flex-shrink-0">
+                                    <button onclick="startEditNote('${note.__backendId}')" class="opacity-40 hover:opacity-100 transition-opacity flex-shrink-0 p-1" title="Düzenle">
+                                        <i data-lucide="edit-2" class="w-4 h-4"></i>
+                                    </button>
+                                    <button onclick="deleteNote('${note.__backendId}')" class="opacity-40 hover:opacity-100 transition-opacity flex-shrink-0 p-1" title="Sil">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                                <div class="flex-grow overflow-y-auto custom-scrollbar pr-2">
+                                    ${note.note_content ? `<p class="text-sm leading-relaxed whitespace-pre-wrap break-words">${note.note_content}</p>` : '<p class="text-xs opacity-50 italic">Metin yok</p>'}
+                                </div>
+                                <div class="pt-3 border-t border-black/10 flex justify-between items-center text-[10px] opacity-60 flex-shrink-0">
+                                    <span>${new Date(note.created_at).toLocaleDateString('tr-TR')}</span>
+                                    <button onclick="startEditNote('${note.__backendId}')" class="opacity-60 hover:opacity-100 transition-opacity px-2 py-1 bg-black/10 rounded hover:bg-black/20 text-xs font-medium">
+                                        Düzenle
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        async function deleteNote(id) {
+            const record = allData.find(d => d.__backendId === id);
+            if (record) {
+                const result = await window.dataSdk.delete(record);
+                if (result.isOk) {
+                    showToast('Not silindi.', 'info');
+                }
+            }
+        }
+
+        function openImageViewer(imageUrl) {
+            imageRotation = 0;
+            document.getElementById('image-viewer-src').src = imageUrl;
+            document.getElementById('image-viewer-src').style.transform = 'rotate(0deg)';
+            document.getElementById('image-viewer-modal').classList.remove('hidden');
+        }
+
+        function rotateImage() {
+            imageRotation = (imageRotation + 90) % 360;
+            const img = document.getElementById('image-viewer-src');
+            img.style.transform = `rotate(${imageRotation}deg)`;
+        }
+
+        function closeImageViewer() {
+            document.getElementById('image-viewer-modal').classList.add('hidden');
+            imageRotation = 0;
+        }
+
+        // Settings Logic
+        async function updateName() {
+            const oldName = document.getElementById('set-old-name').value;
+            const oldPass = document.getElementById('set-old-pass-name').value;
+            const newName = document.getElementById('set-new-name').value.trim();
+
+            if (currentUser.username !== oldName || currentUser.password_hash !== btoa(oldPass)) {
+                return showToast('Eski bilgiler hatalı!', 'error');
+            }
+            if (newName.length < 3 || newName.length > 15 || !/^[a-zA-Z0-9]+$/.test(newName)) {
+                return showToast('Yeni isim geçersiz.', 'error');
+            }
+
+            const updatedUser = { ...currentUser, username: newName };
+            const res = await window.dataSdk.update(updatedUser);
+            
+            if (res.isOk) {
+                currentUser = updatedUser;
+                document.getElementById('display-name').textContent = newName;
+                showToast('İsim başarıyla güncellendi.', 'success');
+                toggleModal('settings-modal', false);
+            }
+        }
+
+        async function updatePassword() {
+            const name = document.getElementById('set-name-pass').value;
+            const oldPass = document.getElementById('set-old-pass').value;
+            const newPass = document.getElementById('set-new-pass').value;
+            const confirm = document.getElementById('set-new-pass-confirm').value;
+
+            if (currentUser.username !== name || currentUser.password_hash !== btoa(oldPass)) {
+                return showToast('Eski bilgiler hatalı!', 'error');
+            }
+            if (newPass.length < 4 || newPass.length > 20 || newPass !== confirm) {
+                return showToast('Yeni şifre geçersiz veya uyuşmuyor.', 'error');
+            }
+
+            const updatedUser = { ...currentUser, password_hash: btoa(newPass) };
+            const res = await window.dataSdk.update(updatedUser);
+            
+            if (res.isOk) {
+                currentUser = updatedUser;
+                showToast('Şifre başarıyla güncellendi.', 'success');
+                toggleModal('settings-modal', false);
+            }
+        }
+
+        // Initialize SDK
+        const dataHandler = {
+            onDataChanged(data) {
+                allData = data;
+                if (currentUser) {
+                    const updatedUser = data.find(d => d.entry_type === 'user' && d.__backendId === currentUser.__backendId);
+                    if (updatedUser) currentUser = updatedUser;
+                    renderNotes();
+                }
+            }
+        };
+
+        const elementHandler = {
+            defaultConfig: config,
+            onConfigChange: async (newConfig) => {
+                config = { ...config, ...newConfig };
+                document.getElementById('main-title').textContent = config.app_title || "Akıllı Post-it";
+                document.getElementById('welcome-text').textContent = config.welcome_message || "Notlarını güvenle sakla ve organize et.";
+            },
+            mapToCapabilities: (cfg) => ({
+                recolorables: [],
+                borderables: [],
+                fontEditable: undefined,
+                fontSizeable: undefined
+            }),
+            mapToEditPanelValues: (cfg) => new Map([
+                ["app_title", cfg.app_title],
+                ["welcome_message", cfg.welcome_message]
+            ])
+        };
+
+        window.onload = async () => {
+            await window.elementSdk.init(elementHandler);
+            await window.dataSdk.init(dataHandler);
+            lucide.createIcons();
+        };
+    </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9dd37b8d5488782b',t:'MTc3MzY2MTIyMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
